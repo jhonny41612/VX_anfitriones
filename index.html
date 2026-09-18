@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis XV Años - Sube tus fotos</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; margin: 0; padding: 20px; text-align: center; color: #333; }
+        .container { max-width: 400px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h1 { color: #d81b60; font-size: 24px; }
+        p { font-size: 14px; color: #666; }
+        input[type="text"], input[type="file"] { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+        button { background-color: #d81b60; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #ad1457; }
+        #mensaje { margin-top: 15px; font-weight: bold; color: #2e7d32; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>¡Mis XV Años!</h1>
+    <p>Gracias por acompañarnos. Comparte tus fotos de la fiesta.</p>
+    
+    <input type="text" id="nombreInvitado" placeholder="Tu nombre (opcional)">
+    <input type="text" id="dedicatoria" placeholder="Escribe una dedicatoria (opcional)">
+    <input type="file" id="archivoFoto" accept="image/*" capture="environment">
+    
+    <button onclick="subirFoto()">Subir Foto</button>
+    
+    <p id="mensaje"></p>
+</div>
+
+<!-- Importar Firebase SDKs -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // Tu configuración exacta de Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyCnrus_x85yxyaNi1U2qm4w8ooDoI4Uc07c",
+        authDomain: "xv-anos-fotos-o-fiestaxv.firebaseapp.com",
+        projectId: "xv-anos-fotos-o-fiestaxv",
+        storageBucket: "xv-anos-fotos-o-fiestaxv.firebasestorage.app",
+        messagingSenderId: "667597372916",
+        appId: "1:667597372916:web:a286f2e982ada5ad67cda1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.subirFoto = async function() {
+        const nombre = document.getElementById('nombreInvitado').value || "Anónimo";
+        const dedicatoria = document.getElementById('dedicatoria').value || "";
+        const archivoInput = document.getElementById('archivoFoto');
+        const mensaje = document.getElementById('mensaje');
+
+        if (archivoInput.files.length === 0) {
+            alert('Por favor selecciona o toma una foto primero.');
+            return;
+        }
+
+        const archivo = archivoInput.files[0];
+        mensaje.innerText = "Procesando foto...";
+
+        const lector = new FileReader();
+        lector.readAsDataURL(archivo);
+        lector.onload = async function () {
+            try {
+                mensaje.innerText = "Subiendo a la base de datos...";
+                await addDoc(collection(db, "fotos_evento"), {
+                    nombre: nombre,
+                    dedicatoria: dedicatoria,
+                    imagenBase64: lector.result,
+                    fecha: serverTimestamp()
+                });
+
+                mensaje.innerText = "¡Foto subida con éxito! Gracias por compartir.";
+                document.getElementById('nombreInvitado').value = '';
+                document.getElementById('dedicatoria').value = '';
+                archivoInput.value = '';
+            } catch (error) {
+                console.error("Error al subir:", error);
+                mensaje.style.color = "red";
+                mensaje.innerText = "Hubo un error al subir la foto. Inténtalo de nuevo.";
+            }
+        };
+    }
+</script>
+
+</body>
+</html>
