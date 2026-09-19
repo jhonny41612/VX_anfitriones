@@ -179,7 +179,8 @@
 
     <div class="form-group">
         <label for="archivoFoto">Elige o toma tu foto:</label>
-        <input type="file" id="archivoFoto" accept="image/*" capture="environment">
+        <!-- Actualizado: Sin capture="environment" para permitir elegir de la galería o cámara -->
+        <input type="file" id="archivoFoto" accept="image/*">
     </div>
     
     <button onclick="subirFoto()">Guardar y Subir Foto</button>
