@@ -98,7 +98,7 @@
             margin-left: 3px;
         }
 
-        input[type="text"], input[type="file"] {
+        input[type="text"] {
             width: 100%;
             padding: 12px;
             border: 1px solid #e0c2c7;
@@ -116,13 +116,58 @@
             box-shadow: 0 0 5px rgba(212, 175, 55, 0.3);
         }
 
-        input[type="file"] {
-            padding: 10px;
-            background: #fff;
-            cursor: pointer;
+        /* Ocultar el input file real */
+        #archivoFoto {
+            display: none;
         }
 
-        button {
+        /* Contenedor de los dos botones de foto */
+        .botones-foto-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        .btn-opcion {
+            flex: 1;
+            background: white;
+            color: #88424e;
+            border: 2px solid var(--rosa-oscuro);
+            padding: 12px 10px;
+            border-radius: 10px;
+            font-size: 13px;
+            cursor: pointer;
+            font-weight: 500;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            box-shadow: 0 2px 8px rgba(199, 140, 150, 0.15);
+        }
+
+        .btn-opcion:hover {
+            background: #fdf2f4;
+            transform: translateY(-1px);
+        }
+
+        .btn-opcion span {
+            font-size: 18px;
+        }
+
+        /* Indicador de archivo seleccionado */
+        #nombreArchivoSeleccionado {
+            font-size: 12px;
+            color: #666;
+            margin-top: 8px;
+            font-style: italic;
+            text-align: center;
+            word-break: break-all;
+        }
+
+        /* Botón Principal de Subir */
+        .btn-subir {
             background: linear-gradient(135deg, #c78c96 0%, #a66370 100%);
             color: white;
             border: none;
@@ -135,10 +180,10 @@
             font-family: 'Poppins', sans-serif;
             box-shadow: 0 4px 12px rgba(199, 140, 150, 0.4);
             transition: all 0.3s ease;
-            margin-top: 10px;
+            margin-top: 15px;
         }
 
-        button:hover {
+        .btn-subir:hover {
             background: linear-gradient(135deg, #b57a84 0%, #94535e 100%);
             box-shadow: 0 6px 15px rgba(199, 140, 150, 0.6);
             transform: translateY(-1px);
@@ -178,11 +223,26 @@
     </div>
 
     <div class="form-group">
-        <label for="archivoFoto">Elige o toma tu foto:</label>
+        <label>Elige una opción para tu foto:</label>
+        
+        <!-- Input file oculto pero funcional -->
         <input type="file" id="archivoFoto" accept="image/*">
+
+        <!-- Dos botones separados para evitar confusiones -->
+        <div class="botones-foto-container">
+            <button type="button" class="btn-opcion" onclick="abrirGaleria()">
+                <span>🖼️</span> Galería
+            </button>
+            <button type="button" class="btn-opcion" onclick="abrirCamara()">
+                <span>📷</span> Tomar Foto
+            </button>
+        </div>
+        
+        <!-- Texto dinámico para que sepan qué foto eligieron -->
+        <div id="nombreArchivoSeleccionado">Ninguna foto seleccionada</div>
     </div>
     
-    <button onclick="subirFoto()">Guardar y Subir Foto</button>
+    <button class="btn-subir" onclick="subirFoto()">Guardar y Subir Foto</button>
     
     <p id="mensaje"></p>
 </div>
@@ -204,14 +264,38 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    const archivoInput = document.getElementById('archivoFoto');
+    const textoSeleccionado = document.getElementById('nombreArchivoSeleccionado');
+
+    // Funciones globales para los botones personalizados
+    window.abrirGaleria = function() {
+        archivoInput.removeAttribute('capture'); // Abre galería directamente en la mayoría de móviles
+        archivoInput.click();
+    }
+
+    window.abrirCamara = function() {
+        archivoInput.setAttribute('capture', 'environment'); // Abre la cámara trasera directo
+        archivoInput.click();
+    }
+
+    // Mostrar el nombre del archivo cuando el usuario seleccione o tome la foto
+    archivoInput.addEventListener('change', function() {
+        if (archivoInput.files.length > 0) {
+            textoSeleccionado.style.color = "#88424e";
+            textoSeleccionado.innerText = "✓ Foto lista: " + archivoInput.files[0].name;
+        } else {
+            textoSeleccionado.style.color = "#666";
+            textoSeleccionado.innerText = "Ninguna foto seleccionada";
+        }
+    });
+
     window.subirFoto = async function() {
         const nombre = document.getElementById('nombreInvitado').value.trim() || "Anónimo";
         const dedicatoria = document.getElementById('dedicatoria').value.trim() || "";
-        const archivoInput = document.getElementById('archivoFoto');
         const mensaje = document.getElementById('mensaje');
 
         if (archivoInput.files.length === 0) {
-            alert('Por favor selecciona o toma una foto primero.');
+            alert('Por favor selecciona una foto de tu galería o toma una con la cámara.');
             return;
         }
 
@@ -219,7 +303,7 @@
         mensaje.style.color = "#88424e";
         mensaje.innerText = "Preparando imagen...";
 
-        // Función para comprimir y mantener alta calidad visual automáticamente
+        // Función para comprimir manteniendo excelente calidad visual
         const comprimirImagen = (file) => {
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -232,7 +316,6 @@
                         let ancho = img.width;
                         let alto = img.height;
                         
-                        // Límite máximo inteligente para asegurar alta definición sin sobrepasar Firebase
                         const maxAncho = 1280;
                         if (ancho > maxAncho) {
                             alto = Math.round((alto * maxAncho) / ancho);
@@ -244,7 +327,6 @@
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, ancho, alto);
 
-                        // Formato JPEG con calidad alta (0.85) para nitidez excelente
                         resolve(canvas.toDataURL('image/jpeg', 0.85));
                     };
                 };
@@ -268,6 +350,8 @@
             document.getElementById('nombreInvitado').value = '';
             document.getElementById('dedicatoria').value = '';
             archivoInput.value = '';
+            textoSeleccionado.style.color = "#666";
+            textoSeleccionado.innerText = "Ninguna foto seleccionada";
         } catch (error) {
             console.error("Error al subir:", error);
             mensaje.style.color = "#d81b60";
