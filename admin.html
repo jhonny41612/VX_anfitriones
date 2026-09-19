@@ -189,8 +189,16 @@
                 const data = documento.data();
                 const idDoc = documento.id;
                 const nombre = data.nombre || "Anónimo";
-                const dedicatoria = data.dedicatoria || "Sin dedicatoria";
+                const dedicatoria = data.dedicatoria || "";
                 const imagenBase64 = data.imagenBase64;
+
+                // Crear un nombre de archivo limpio que incluya el nombre y la dedicatoria (si la hay)
+                let nombreLimpio = nombre.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]/g, "").trim().replace(/\s+/g, "_");
+                let dedicatoriaLimpia = dedicatoria ? dedicatoria.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]/g, "").trim().replace(/\s+/g, "_") : "";
+                
+                let nombreArchivo = dedicatoriaLimpia 
+                    ? `Foto_de_${nombreLimpio}_-_${dedicatoriaLimpia}.jpg` 
+                    : `Foto_de_${nombreLimpio}.jpg`;
 
                 const tarjeta = document.createElement('div');
                 tarjeta.className = 'tarjeta-foto';
@@ -200,9 +208,9 @@
                     <img src="${imagenBase64}" alt="Foto de invitado">
                     <div class="info-contenido">
                         <div class="nombre-invitado">👤 ${nombre}</div>
-                        <div class="dedicatoria-texto">"${dedicatoria}"</div>
+                        <div class="dedicatoria-texto">"${dedicatoria || 'Sin dedicatoria'}"</div>
                         <div class="botones-contenedor">
-                            <a href="${imagenBase64}" download="foto_nahiara_${Date.now()}.jpg" class="btn-accion btn-descargar">📥 Descargar</a>
+                            <a href="${imagenBase64}" download="${nombreArchivo}" class="btn-accion btn-descargar">📥 Descargar</a>
                             <button class="btn-accion btn-eliminar" onclick="eliminarFoto('${idDoc}')">🗑️ Eliminar</button>
                         </div>
                     </div>
