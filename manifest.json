@@ -1,0 +1,15 @@
+{
+  "name": "XV Nahiara Admin",
+  "short_name": "XV Admin",
+  "start_url": "/VX_anfitriones/admin.html",
+  "display": "standalone",
+  "background_color": "#f8bbd0",
+  "theme_color": "#c78c96",
+  "icons": [
+    {
+      "src": "15anos.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
