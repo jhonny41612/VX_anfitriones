@@ -179,7 +179,6 @@
 
     <div class="form-group">
         <label for="archivoFoto">Elige o toma tu foto:</label>
-        <!-- Actualizado: Sin capture="environment" para permitir elegir de la galería o cámara -->
         <input type="file" id="archivoFoto" accept="image/*">
     </div>
     
@@ -218,31 +217,62 @@
 
         const archivo = archivoInput.files[0];
         mensaje.style.color = "#88424e";
-        mensaje.innerText = "Procesando imagen...";
+        mensaje.innerText = "Preparando imagen...";
 
-        const lector = new FileReader();
-        lector.readAsDataURL(archivo);
-        lector.onload = async function () {
-            try {
-                mensaje.innerText = "Subiendo al sistema...";
-                await addDoc(collection(db, "fotos_evento"), {
-                    nombre: nombre,
-                    dedicatoria: dedicatoria,
-                    imagenBase64: lector.result,
-                    fecha: serverTimestamp()
-                });
+        // Función para comprimir y mantener alta calidad visual automáticamente
+        const comprimirImagen = (file) => {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let ancho = img.width;
+                        let alto = img.height;
+                        
+                        // Límite máximo inteligente para asegurar alta definición sin sobrepasar Firebase
+                        const maxAncho = 1280;
+                        if (ancho > maxAncho) {
+                            alto = Math.round((alto * maxAncho) / ancho);
+                            ancho = maxAncho;
+                        }
 
-                mensaje.style.color = "#2e7d32";
-                mensaje.innerText = "¡Foto subida con éxito! Gracias por compartir.";
-                document.getElementById('nombreInvitado').value = '';
-                document.getElementById('dedicatoria').value = '';
-                archivoInput.value = '';
-            } catch (error) {
-                console.error("Error al subir:", error);
-                mensaje.style.color = "d81b60";
-                mensaje.innerText = "Hubo un error al subir la foto. Inténtalo de nuevo.";
-            }
+                        canvas.width = ancho;
+                        canvas.height = alto;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, ancho, alto);
+
+                        // Formato JPEG con calidad alta (0.85) para nitidez excelente
+                        resolve(canvas.toDataURL('image/jpeg', 0.85));
+                    };
+                };
+            });
         };
+
+        try {
+            mensaje.innerText = "Optimizando foto...";
+            const imagenOptimizada = await comprimirImagen(archivo);
+
+            mensaje.innerText = "Subiendo al sistema...";
+            await addDoc(collection(db, "fotos_evento"), {
+                nombre: nombre,
+                dedicatoria: dedicatoria,
+                imagenBase64: imagenOptimizada,
+                fecha: serverTimestamp()
+            });
+
+            mensaje.style.color = "#2e7d32";
+            mensaje.innerText = "¡Foto subida con éxito! Gracias por compartir.";
+            document.getElementById('nombreInvitado').value = '';
+            document.getElementById('dedicatoria').value = '';
+            archivoInput.value = '';
+        } catch (error) {
+            console.error("Error al subir:", error);
+            mensaje.style.color = "#d81b60";
+            mensaje.innerText = "Hubo un error al subir la foto. Inténtalo de nuevo.";
+        }
     }
 </script>
 
